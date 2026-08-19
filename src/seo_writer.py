@@ -12,6 +12,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
 
+from afiliado_links import eh_link_curto_afiliado
+
 logger = logging.getLogger(__name__)
 
 # A API devolve 404 para gemini-2.0-flash; o endpoint recomenda gemini-3.6-flash.
@@ -32,7 +34,11 @@ def gerar_post_markdown(produto: dict[str, Any]) -> str:
     tag de afiliado definida em ``AFFILIATE_TAG``.
     """
     tag = os.getenv("AFFILIATE_TAG", "").strip()
-    link_afiliado = aplicar_tag_afiliado(produto.get("link_original", ""), tag)
+    url = produto.get("link_original", "")
+    if produto.get("tipo") == "link_afiliado" or eh_link_curto_afiliado(str(url)):
+        link_afiliado = str(url)
+    else:
+        link_afiliado = aplicar_tag_afiliado(url, tag)
     produto_enriquecido = {**produto, "link_afiliado": link_afiliado, "tag": tag}
 
     corpo = _gerar_com_gemini(produto_enriquecido)

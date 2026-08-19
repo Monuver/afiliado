@@ -20,6 +20,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from scraper import AmazonScraper, CatalogoNaoConfigurado  # noqa: E402
+from afiliado_links import eh_link_curto_afiliado, expandir_links  # noqa: E402
 from seo_writer import aplicar_tag_afiliado, gerar_post_markdown  # noqa: E402
 
 TIMEZONE = ZoneInfo("America/Sao_Paulo")
@@ -41,12 +42,39 @@ def main() -> int:
     POSTS_DIR.mkdir(parents=True, exist_ok=True)
 
     config = _carregar_config()
+    links = _resolver_links(config)
     termos = _resolver_termos(config)
     limite = _resolver_limite(config)
 
-    if not termos:
-        logger.error("Nenhum termo de busca configurado. Abortando.")
+    if not links and not termos:
+        logger.error("Nenhum link de afiliado nem termo de busca configurado. Abortando.")
         return 1
+
+    gerados = 0
+    erros = 0
+
+    if links:
+        try:
+            ofertas = expandir_links(links)
+        except Exception as exc:
+            logger.error("Falha ao expandir links de afiliado: %s", exc)
+            return 1
+        if not ofertas:
+            logger.error("Nenhum dos links de afiliado pôde ser expandido.")
+            return 1
+        for produto in ofertas:
+            try:
+                if _salvar_post(produto):
+                    gerados += 1
+            except Exception as exc:
+                erros += 1
+                logger.error(
+                    "Falha ao gerar post para '%s': %s",
+                    produto.get("nome", produto.get("link_original")),
+                    exc,
+                )
+        logger.info("Concluído: %s post(s) a partir de links, %s erro(s).", gerados, erros)
+        return 0 if erros == 0 or gerados > 0 else 1
 
     try:
         scraper = AmazonScraper()
@@ -107,6 +135,16 @@ def _carregar_config() -> dict:
         return {}
 
 
+def _resolver_links(config: dict) -> list[str]:
+    bruto = os.getenv("AFFILIATE_LINKS", "").strip()
+    if bruto:
+        return [item.strip() for item in re.split(r"[\s,]+", bruto) if item.strip().startswith("http")]
+    do_yaml = config.get("links_afiliado") or []
+    if isinstance(do_yaml, str):
+        do_yaml = [do_yaml]
+    return [str(item).strip() for item in do_yaml if str(item).strip().startswith("http")]
+
+
 def _resolver_termos(config: dict) -> list[str]:
     bruto = os.getenv("SEARCH_TERMS", "").strip()
     if bruto:
@@ -132,16 +170,21 @@ def _resolver_limite(config: dict) -> int:
 
 def _salvar_post(produto: dict) -> bool:
     nome = str(produto.get("nome") or "oferta").strip()
+    asin = str(produto.get("asin") or "").strip().lower()
     slug = slugify(nome)
+    if asin:
+        slug = f"{slug[:60].rstrip('-')}-{asin}"
     hoje = datetime.now(TIMEZONE).date().isoformat()
     destino = _destino_do_slug(slug, hoje)
     atualizando = destino.exists()
 
-    tag = os.getenv("AFFILIATE_TAG", "").strip()
-    produto = {
-        **produto,
-        "link_afiliado": aplicar_tag_afiliado(str(produto.get("link_original") or ""), tag),
-    }
+    url_original = str(produto.get("link_original") or "").strip()
+    if produto.get("tipo") == "link_afiliado" or eh_link_curto_afiliado(url_original):
+        link_afiliado = url_original
+    else:
+        tag = os.getenv("AFFILIATE_TAG", "").strip()
+        link_afiliado = aplicar_tag_afiliado(url_original, tag)
+    produto = {**produto, "link_afiliado": link_afiliado}
     corpo = gerar_post_markdown(produto)
     front_matter = _montar_front_matter(produto, corpo)
     destino.write_text(front_matter + corpo + "\n", encoding="utf-8")

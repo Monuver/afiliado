@@ -13,12 +13,12 @@ Standard setup/run commands live in `README.md`. Notes below are the non-obvious
 
 ### Python generator
 - Activate the venv before running: `source .venv/bin/activate`, then `python src/builder.py`.
-- Real ads work with just `AFFILIATE_TAG`: the generator builds live Amazon search
-  URLs (`amazon.com.br/s?k=...`) instead of fake ASINs. Creators API credentials
-  (`AMAZON_CREDENTIAL_ID` / `AMAZON_CREDENTIAL_SECRET`) are optional — Amazon often
-  blocks new Associates (red X on “conta aprovada”, and catalog access typically
-  needs ~10 qualifying sales in 30 days). If those keys exist, `searchItems` is
-  tried first; on failure/ineligibility it falls back to search links.
+- Preferred path: put Amazon short links (`amzn.to`) in `_config.yml` → `links_afiliado`
+  (or env `AFFILIATE_LINKS`). The generator unfurls only those URLs and keeps the
+  original short link as the CTA. When that list is non-empty, search terms are skipped.
+- Fallback without product links: live Amazon search URLs (`amazon.com.br/s?k=...`) using
+  `AFFILIATE_TAG`. Creators API (`AMAZON_CREDENTIAL_ID` / `AMAZON_CREDENTIAL_SECRET`) is
+  optional — new Associates are often blocked until ~10 qualifying sales in 30 days.
 - Do **not** scrape Amazon.
 - `ALLOW_SIMULATED=1` is the only way to get the old fake catalog; never use it for
   published posts.
