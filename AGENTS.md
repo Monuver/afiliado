@@ -13,14 +13,17 @@ Standard setup/run commands live in `README.md`. Notes below are the non-obvious
 
 ### Python generator
 - Activate the venv before running: `source .venv/bin/activate`, then `python src/builder.py`.
-- Real catalog requires Amazon Creators API credentials in the environment:
-  `AMAZON_CREDENTIAL_ID`, `AMAZON_CREDENTIAL_SECRET`, optional `AMAZON_CREDENTIAL_VERSION`
-  (default `3.1` for Brazil/NA), plus `AFFILIATE_TAG`. Without the credential pair the
-  builder exits with `CatalogoNaoConfigurado` instead of inventing products.
-- Do **not** scrape Amazon. The official replacement for PA-API 5 is Creators API
-  (`https://creatorsapi.amazon/catalog/v1/searchItems`).
+- Real ads work with just `AFFILIATE_TAG`: the generator builds live Amazon search
+  URLs (`amazon.com.br/s?k=...`) instead of fake ASINs. Creators API credentials
+  (`AMAZON_CREDENTIAL_ID` / `AMAZON_CREDENTIAL_SECRET`) are optional — Amazon often
+  blocks new Associates (red X on “conta aprovada”, and catalog access typically
+  needs ~10 qualifying sales in 30 days). If those keys exist, `searchItems` is
+  tried first; on failure/ineligibility it falls back to search links.
+- Do **not** scrape Amazon.
 - `ALLOW_SIMULATED=1` is the only way to get the old fake catalog; never use it for
   published posts.
+- Missing `AFFILIATE_TAG` raises `CatalogoNaoConfigurado`. Missing Creators API keys
+  does **not** abort the run.
 - Gemini (`GEMINI_API_KEY`) writes the SEO copy. If the key is missing/invalid, the writer
   falls back to a Markdown template. `.env.example` ships a placeholder
   `GEMINI_API_KEY=sua_chave_aqui` — that produces a noisy `API_KEY_INVALID` before fallback.

@@ -128,10 +128,37 @@ def _montar_prompt(produto: dict[str, Any]) -> str:
     link = produto.get("link_afiliado") or produto.get("link_original", "#")
     imagem = produto.get("imagem", "")
     caracteristicas = str(produto.get("caracteristicas") or "").strip()
+    termo = str(produto.get("termo") or "").strip()
+    if produto.get("tipo") == "busca":
+        return f"""Você é um copywriter sênior de SEO para um site brasileiro de ofertas de afiliados.
+
+Escreva UM guia de compra em Markdown (sem front matter YAML) sobre a categoria abaixo.
+
+Categoria de busca: {termo or nome}
+Página de ofertas ao vivo na Amazon (use exatamente este URL no CTA): {link}
+
+Regras obrigatórias:
+- Comece com um único H1 chamativo com a palavra-chave da categoria.
+- Primeiro parágrafo: resumo persuasivo (máx. 160 caracteres de intenção de meta description).
+- NÃO invente modelo, marca, ASIN, preço fechado nem foto de produto específico.
+- NÃO invente que um item específico está em promoção; o preço real está na Amazon.
+- Use H2/H3 para: o que avaliar antes de comprar, para quem é indicado, mini FAQ (3 perguntas).
+- Linguagem em português do Brasil, tom direto, sem clichês de "melhor do mundo".
+- Feche com um H2 de call-to-action e UM único link Markdown, exatamente assim:
+  [Confira as ofertas atualizadas na Amazon]({link})
+- Não inclua a palavra "afiliado" no texto visível.
+- Não use blocos de código. Não use front matter. Não explique o que você fez.
+"""
+
     bloco_features = (
         f"Características oficiais (use só estas; não invente spec): {caracteristicas}"
         if caracteristicas
         else "Características oficiais: não informadas. Não invente especificações técnicas."
+    )
+    regra_imagem = (
+        f"- Inclua a imagem com a sintaxe Markdown: ![{nome}]({imagem})"
+        if imagem
+        else "- Não inclua imagem (não há URL oficial)."
     )
 
     return f"""Você é um copywriter sênior de SEO para um site brasileiro de ofertas de afiliados.
@@ -147,7 +174,7 @@ Imagem: {imagem}
 Regras obrigatórias:
 - Comece com um único H1 chamativo, incluindo a palavra-chave principal de forma natural.
 - Primeiro parágrafo: resumo persuasivo (máx. 160 caracteres de intenção de meta description).
-- Inclua a imagem com a sintaxe Markdown: ![{nome}]({imagem})
+{regra_imagem}
 - Use H2/H3 para benefícios, para quem é indicado e um mini FAQ (3 perguntas) visando featured snippet.
 - Linguagem em português do Brasil, tom direto, sem clichês de "melhor do mundo".
 - Não invente especificações técnicas. Só cite o que estiver no nome ou nas características oficiais.
@@ -163,6 +190,38 @@ def _gerar_fallback_markdown(produto: dict[str, Any]) -> str:
     preco = produto.get("preco", "Consulte o preço")
     link = produto.get("link_afiliado") or produto.get("link_original", "#")
     imagem = produto.get("imagem", "")
+    termo = str(produto.get("termo") or nome).strip()
+
+    if produto.get("tipo") == "busca":
+        return f"""# {termo}: o que vale a pena olhar agora
+
+Se você está pesquisando **{termo}**, o caminho mais honesto é comparar as ofertas ao vivo na Amazon — preço, estoque e frete mudam o tempo todo.
+
+## O que avaliar antes de comprar
+
+- Preço do dia, não um valor “travado” em blog.
+- Avaliação de quem já comprou e política de troca do vendedor.
+- Frete e prazo na sua região, visíveis só na página da Amazon.
+
+## Para quem é indicado
+
+Quem quer resolver a compra hoje, com nota fiscal e rastreio, sem abrir dezenas de lojas.
+
+## Mini FAQ
+
+### Qual o preço certo de {termo}?
+O preço válido é o da Amazon no instante do clique. Esta página só aponta para a busca atualizada.
+
+### Tem garantia?
+A garantia é a do vendedor na página do produto, na Amazon.
+
+### Como aproveitar?
+Abra a busca, compare duas ou três opções e feche se o conjunto preço + prazo fizer sentido.
+
+## Veja as ofertas de agora
+
+[Confira as ofertas atualizadas na Amazon]({link})
+"""
 
     bloco_imagem = f"![{nome}]({imagem})\n\n" if imagem else ""
 

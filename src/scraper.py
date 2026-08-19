@@ -1,14 +1,14 @@
-"""Catálogo real de ofertas da Amazon via Creators API.
+"""Catálogo de ofertas da Amazon Brasil.
 
-A classe ``AmazonScraper`` busca produtos de verdade no marketplace
-``amazon.com.br`` (nome, preço, link de afiliado e imagem). Scraping da
-Amazon continua fora de questão (ToS); o caminho oficial é a Creators API.
+Caminhos, em ordem:
 
-Credenciais (Associates Central → Tools → Creators API):
-``AMAZON_CREDENTIAL_ID``, ``AMAZON_CREDENTIAL_SECRET`` e, se não for 3.1,
-``AMAZON_CREDENTIAL_VERSION``. A tag de afiliado já vem de ``AFFILIATE_TAG``.
+1. Creators API, se ``AMAZON_CREDENTIAL_ID`` e ``AMAZON_CREDENTIAL_SECRET``
+   existirem — produtos específicos (ASIN, preço, foto).
+2. Links de busca reais ``amazon.com.br/s?k=...`` com a ``AFFILIATE_TAG`` —
+   funciona sem a API (contas novas a Amazon ainda não libera a Creators API).
+3. Catálogo fictício só com ``ALLOW_SIMULATED=1`` (desenvolvimento).
 
-Simulação local só entra com ``ALLOW_SIMULATED=1`` — nunca como fallback silencioso.
+Scraping da Amazon continua fora de questão (ToS).
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ _VARIANTES = (
 
 
 class CatalogoNaoConfigurado(RuntimeError):
-    """Faltam credenciais da Creators API e a simulação está desligada."""
+    """Falta a tag de afiliado, necessária para montar links reais da Amazon."""
 
 
 class AmazonScraper:
@@ -104,26 +104,49 @@ class AmazonScraper:
             )
             return self._buscar_simuladas(termo, limite)
 
-        ofertas = self._buscar_creators_api(termo, limite)
-        logger.info("Encontradas %s oferta(s) reais para '%s'.", len(ofertas), termo)
-        return ofertas
-
-    def _buscar_creators_api(self, termo: str, limite: int) -> list[dict[str, str]]:
-        credential_id = os.getenv("AMAZON_CREDENTIAL_ID", "").strip()
-        credential_secret = os.getenv("AMAZON_CREDENTIAL_SECRET", "").strip()
         partner_tag = os.getenv("AFFILIATE_TAG", "").strip()
-        version = os.getenv("AMAZON_CREDENTIAL_VERSION", "3.1").strip() or "3.1"
-
-        if not credential_id or not credential_secret:
-            raise CatalogoNaoConfigurado(
-                "Catálogo real exige AMAZON_CREDENTIAL_ID e AMAZON_CREDENTIAL_SECRET "
-                "(Associates Central → Tools → Creators API). "
-                "A tag AFFILIATE_TAG sozinha não consulta o catálogo da Amazon."
-            )
         if not partner_tag:
             raise CatalogoNaoConfigurado(
-                "AFFILIATE_TAG vazia. A Creators API precisa da partner tag Associates."
+                "AFFILIATE_TAG vazia. Sem a tag Associates não dá para montar "
+                "links reais da Amazon."
             )
+
+        if _creators_configurada():
+            try:
+                ofertas = self._buscar_creators_api(termo, limite, partner_tag)
+                if ofertas:
+                    logger.info(
+                        "Encontradas %s oferta(s) via Creators API para '%s'.",
+                        len(ofertas),
+                        termo,
+                    )
+                    return ofertas
+                logger.warning(
+                    "Creators API não devolveu itens para '%s'; usando busca Amazon.",
+                    termo,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Creators API indisponível para '%s' (%s: %s); usando busca Amazon.",
+                    termo,
+                    type(exc).__name__,
+                    exc,
+                )
+
+        ofertas = montar_ofertas_busca(termo, limite=1)
+        logger.info(
+            "Montada(s) %s busca(s) real(is) na Amazon para '%s'.",
+            len(ofertas),
+            termo,
+        )
+        return ofertas
+
+    def _buscar_creators_api(
+        self, termo: str, limite: int, partner_tag: str
+    ) -> list[dict[str, str]]:
+        credential_id = os.getenv("AMAZON_CREDENTIAL_ID", "").strip()
+        credential_secret = os.getenv("AMAZON_CREDENTIAL_SECRET", "").strip()
+        version = os.getenv("AMAZON_CREDENTIAL_VERSION", "3.1").strip() or "3.1"
 
         token = self._obter_token(credential_id, credential_secret, version)
         self._respeitar_rate_limit()
@@ -295,6 +318,48 @@ class AmazonScraper:
                 }
             )
         return ofertas
+
+
+def montar_ofertas_busca(termo: str, limite: int = 1) -> list[dict[str, str]]:
+    """Monta anúncios reais: a página de busca da Amazon para o termo.
+
+    Não inventa ASIN nem preço. O clique abre resultados ao vivo em
+    amazon.com.br, já com a tag aplicada depois pelo writer/builder.
+    """
+    termo = (termo or "").strip()
+    if not termo:
+        return []
+    limite = max(1, min(int(limite), 3))
+    sufixos = ("", " oferta", " custo benefício")[:limite]
+    ofertas: list[dict[str, str]] = []
+    for sufixo in sufixos:
+        consulta = f"{termo}{sufixo}".strip()
+        if sufixo == "":
+            nome = f"{termo[0].upper() + termo[1:]} na Amazon"
+        elif "oferta" in sufixo:
+            nome = f"{termo[0].upper() + termo[1:]} em oferta na Amazon"
+        else:
+            nome = f"{termo[0].upper() + termo[1:]} com melhor custo benefício na Amazon"
+        ofertas.append(
+            {
+                "nome": nome,
+                "preco": "Ver preço na Amazon",
+                "link_original": (
+                    f"{AMAZON_BASE}/s?k={quote_plus(consulta)}"
+                ),
+                "imagem": "",
+                "tipo": "busca",
+                "termo": consulta,
+            }
+        )
+    return ofertas
+
+
+def _creators_configurada() -> bool:
+    return bool(
+        os.getenv("AMAZON_CREDENTIAL_ID", "").strip()
+        and os.getenv("AMAZON_CREDENTIAL_SECRET", "").strip()
+    )
 
 
 def extrair_oferta(item: dict[str, Any]) -> dict[str, str] | None:
