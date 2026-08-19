@@ -1,0 +1,31 @@
+---
+layout: default
+---
+<article class="post" itemscope itemtype="https://schema.org/BlogPosting">
+  <p class="meta">
+    <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">{{ page.date | date: "%d/%m/%Y" }}</time>
+    {% if page.preco %} · <span class="price">{{ page.preco }}</span>{% endif %}
+  </p>
+  {{ content }}
+  {% if page.affiliate_url %}
+  <p><a class="btn" href="{{ page.affiliate_url }}" rel="sponsored nofollow noopener" target="_blank">Ver oferta na Amazon</a></p>
+  {% endif %}
+</article>
+
+{% if page.affiliate_url %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": {{ page.title | jsonify }},
+  "image": {{ page.image | jsonify }},
+  "description": {{ page.description | jsonify }},
+  "offers": {
+    "@type": "Offer",
+    "url": {{ page.affiliate_url | jsonify }},
+    "priceCurrency": "BRL",
+    "availability": "https://schema.org/InStock"
+  }
+}
+</script>
+{% endif %}

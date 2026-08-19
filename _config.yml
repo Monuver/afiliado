@@ -1,0 +1,52 @@
+title: Ofertas Infinitas
+description: As melhores ofertas selecionadas automaticamente para você. Compare preços e compre com segurança.
+url: "https://monuver.github.io"
+baseurl: "/afiliado"
+lang: pt-BR
+timezone: America/Sao_Paulo
+markdown: kramdown
+permalink: /ofertas/:title/
+highlighter: rouge
+
+author:
+  name: Ofertas Infinitas
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-feed
+
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      author: Ofertas Infinitas
+
+exclude:
+  - src/
+  - requirements.txt
+  - README.md
+  - .github/
+  - .env
+  - .env.example
+  - .gitignore
+  - venv/
+  - .venv/
+  - vendor/
+  - Gemfile
+  - Gemfile.lock
+
+# Parâmetros do gerador automático (lidos pelo builder.py)
+termos_busca:
+  - air fryer
+  - fone bluetooth
+  - smartwatch
+  - cadeira gamer
+  - liquidificador
+max_ofertas_por_termo: 3

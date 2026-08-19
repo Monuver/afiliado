@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'pt-BR' }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% seo %}
+    <link rel="alternate" type="application/atom+xml" title="{{ site.title }}" href="{{ '/feed.xml' | relative_url }}">
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --ink: #1c1917;
+        --muted: #57534e;
+        --card: #fff;
+        --accent: #c2410c;
+        --accent-ink: #fff;
+        --line: #e7e5e4;
+        --radius: 14px;
+        --max: 72rem;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        line-height: 1.6;
+      }
+      a { color: var(--accent); }
+      img { max-width: 100%; height: auto; }
+      .wrap { width: min(var(--max), calc(100% - 2rem)); margin-inline: auto; }
+      header.site {
+        padding: 1.25rem 0;
+        border-bottom: 1px solid var(--line);
+        background: var(--card);
+      }
+      header.site .wrap, footer.site .wrap {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      }
+      .brand {
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        font-size: 1.15rem;
+        color: var(--ink);
+        text-decoration: none;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+        gap: 1.25rem;
+        padding: 2rem 0 3rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .card img { aspect-ratio: 1 / 1; object-fit: cover; width: 100%; background: #eee; }
+      .card .body { padding: 1rem 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .4rem; flex: 1; }
+      .card h2 { font-size: 1.05rem; line-height: 1.35; margin: 0; letter-spacing: -0.02em; }
+      .card h2 a { color: inherit; text-decoration: none; }
+      .price { font-weight: 700; color: var(--accent); }
+      .btn {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--accent-ink);
+        text-decoration: none;
+        font-weight: 700;
+        padding: .7rem 1rem;
+        border-radius: 999px;
+        text-align: center;
+        margin-top: auto;
+      }
+      article.post { background: var(--card); border-radius: var(--radius); padding: clamp(1.2rem, 3vw, 2.4rem); margin: 2rem 0 3rem; border: 1px solid var(--line); }
+      article.post h1 { letter-spacing: -0.03em; line-height: 1.2; margin-top: 0; }
+      article.post img { border-radius: 10px; }
+      .hero { padding: 2.4rem 0 0; }
+      .hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.04em; margin: 0 0 .5rem; }
+      .hero p { color: var(--muted); margin: 0; max-width: 40rem; }
+      footer.site { padding: 1.5rem 0 2rem; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); }
+      .meta { color: var(--muted); font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <header class="site">
+      <div class="wrap">
+        <a class="brand" href="{{ '/' | relative_url }}">{{ site.title }}</a>
+        <span class="meta">Atualizado automaticamente</span>
+      </div>
+    </header>
+    <main class="wrap">
+      {{ content }}
+    </main>
+    <footer class="site">
+      <div class="wrap">
+        <span>© {{ site.time | date: '%Y' }} {{ site.title }}</span>
+        <span>Links de afiliado: podemos receber comissão sem custo extra para você.</span>
+      </div>
+    </footer>
+  </body>
+</html>
