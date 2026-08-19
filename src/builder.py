@@ -122,12 +122,8 @@ def _salvar_post(produto: dict) -> bool:
     nome = str(produto.get("nome") or "oferta").strip()
     slug = slugify(nome)
     hoje = datetime.now(TIMEZONE).date().isoformat()
-    nome_arquivo = f"{hoje}-{slug}.md"
-    destino = POSTS_DIR / nome_arquivo
-
-    if _post_duplicado(slug):
-        logger.info("Post já existe para slug '%s'; pulando para evitar conteúdo duplicado.", slug)
-        return False
+    destino = _destino_do_slug(slug, hoje)
+    atualizando = destino.exists()
 
     tag = os.getenv("AFFILIATE_TAG", "").strip()
     produto = {
@@ -137,14 +133,17 @@ def _salvar_post(produto: dict) -> bool:
     corpo = gerar_post_markdown(produto)
     front_matter = _montar_front_matter(produto, corpo)
     destino.write_text(front_matter + corpo + "\n", encoding="utf-8")
-    logger.info("Post salvo: %s", destino.relative_to(ROOT_DIR))
+    acao = "atualizado" if atualizando else "salvo"
+    logger.info("Post %s: %s", acao, destino.relative_to(ROOT_DIR))
     return True
 
 
-def _post_duplicado(slug: str) -> bool:
-    """Evita republicar o mesmo produto em dias diferentes (conteúdo duplicado)."""
-    padrao = f"*-{slug}.md"
-    return any(POSTS_DIR.glob(padrao))
+def _destino_do_slug(slug: str, hoje: str) -> Path:
+    """Reusa o arquivo do mesmo produto para não criar URLs duplicadas."""
+    existentes = sorted(POSTS_DIR.glob(f"*-{slug}.md"))
+    if existentes:
+        return existentes[0]
+    return POSTS_DIR / f"{hoje}-{slug}.md"
 
 
 def _montar_front_matter(produto: dict, corpo: str) -> str:

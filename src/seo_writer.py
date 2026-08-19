@@ -14,7 +14,15 @@ import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-MODELO_PADRAO = "gemini-2.0-flash"
+# A API devolve 404 para gemini-2.0-flash; o endpoint recomenda gemini-3.6-flash.
+MODELO_PADRAO = "gemini-3.6-flash"
+MODELOS_RESERVA = (
+    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-flash-latest",
+)
+
+_modelo_ok: str | None = None
 
 
 def gerar_post_markdown(produto: dict[str, Any]) -> str:
@@ -53,24 +61,65 @@ def aplicar_tag_afiliado(url: str, tag: str) -> str:
     )
 
 
+def _candidatos_de_modelo() -> list[str]:
+    escolhido = os.getenv("GEMINI_MODEL", "").strip()
+    cadeia: list[str] = []
+    if escolhido:
+        cadeia.append(escolhido)
+    for nome in MODELOS_RESERVA:
+        if nome not in cadeia:
+            cadeia.append(nome)
+    return cadeia
+
+
 def _gerar_com_gemini(produto: dict[str, Any]) -> str | None:
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
         logger.info("GEMINI_API_KEY não definida; pulando a geração via IA.")
         return None
 
-    modelo_nome = os.getenv("GEMINI_MODEL", MODELO_PADRAO).strip() or MODELO_PADRAO
+    global _modelo_ok
     prompt = _montar_prompt(produto)
+    genai.configure(api_key=api_key)
 
-    try:
-        genai.configure(api_key=api_key)
-        modelo = genai.GenerativeModel(modelo_nome)
-        resposta = modelo.generate_content(prompt)
-        texto = (getattr(resposta, "text", None) or "").strip()
-        return texto or None
-    except Exception as exc:  # SDK Gemini levanta tipos variados (rede, quota, auth).
-        logger.error("Falha ao gerar conteúdo com Gemini (%s): %s", type(exc).__name__, exc)
-        return None
+    modelos = _candidatos_de_modelo()
+    if _modelo_ok:
+        modelos = [_modelo_ok] + [nome for nome in modelos if nome != _modelo_ok]
+    ultimo_erro: Exception | None = None
+
+    for modelo_nome in modelos:
+        if not modelo_nome:
+            continue
+        try:
+            modelo = genai.GenerativeModel(modelo_nome)
+            resposta = modelo.generate_content(prompt)
+            texto = (getattr(resposta, "text", None) or "").strip()
+            if not texto:
+                logger.warning("Gemini (%s) devolveu resposta vazia.", modelo_nome)
+                continue
+            if _modelo_ok != modelo_nome:
+                logger.info("Gemini ativo com o modelo %s.", modelo_nome)
+                _modelo_ok = modelo_nome
+            return texto
+        except Exception as exc:  # SDK Gemini levanta tipos variados (rede, quota, auth).
+            ultimo_erro = exc
+            logger.warning(
+                "Modelo %s indisponível (%s): %s",
+                modelo_nome,
+                type(exc).__name__,
+                exc,
+            )
+            if _modelo_ok == modelo_nome:
+                _modelo_ok = None
+            continue
+
+    if ultimo_erro is not None:
+        logger.error(
+            "Falha ao gerar conteúdo com Gemini (%s): %s",
+            type(ultimo_erro).__name__,
+            ultimo_erro,
+        )
+    return None
 
 
 def _montar_prompt(produto: dict[str, Any]) -> str:

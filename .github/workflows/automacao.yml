@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -27,7 +27,7 @@ jobs:
       - name: Gerar posts de ofertas
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-3.6-flash' }}
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           SEARCH_TERMS: ${{ secrets.SEARCH_TERMS }}
           MAX_OFERTAS: ${{ secrets.MAX_OFERTAS }}
