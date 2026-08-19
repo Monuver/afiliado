@@ -6,10 +6,13 @@ O site chama-se **Ofertas Infinitas**. O workflow do GitHub Actions roda todos o
 
 ## Como funciona
 
-1. `src/scraper.py` monta links reais `amazon.com.br/s?k=...` com a `AFFILIATE_TAG`. Se a Creators API estiver habilitada na conta Associates, busca produtos específicos (ASIN, preço, foto).
-2. `src/seo_writer.py` gera Markdown persuasivo com a API Gemini. Em modo busca, não inventa modelo, ASIN nem preço.
-3. `src/builder.py` orquestra o fluxo e grava em `_posts/YYYY-MM-DD-titulo-do-produto.md`.
-4. O Jekyll (GitHub Pages) transforma os posts em um site estático rápido, sem JavaScript.
+1. `src/builder.py` lê `links_afiliado` em `_config.yml` (ou o secret/env `AFFILIATE_LINKS`).
+2. `src/afiliado_links.py` abre cada `amzn.to` / `/dp/` que você passou, pega nome, preço e foto, e **mantém o seu link curto no CTA**.
+3. Se a lista de links estiver vazia, cai no modo busca (`amazon.com.br/s?k=...`) ou na Creators API, se a Amazon tiver liberado.
+4. `src/seo_writer.py` gera o Markdown com Gemini.
+5. O Jekyll (GitHub Pages) publica o site.
+
+Para adicionar produto novo, cole o `amzn.to` em `_config.yml` na lista `links_afiliado` e rode `python src/builder.py`.
 
 Scraping da Amazon **não é usado** (viola os termos). A Creators API exige conta Associates aprovada e, para catálogo de produto, em geral **10 vendas qualificadas nos últimos 30 dias**. Conta nova usa o modo busca até a Amazon liberar a API.
 

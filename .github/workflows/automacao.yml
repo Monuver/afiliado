@@ -32,6 +32,7 @@ jobs:
           AMAZON_CREDENTIAL_ID: ${{ secrets.AMAZON_CREDENTIAL_ID }}
           AMAZON_CREDENTIAL_SECRET: ${{ secrets.AMAZON_CREDENTIAL_SECRET }}
           AMAZON_CREDENTIAL_VERSION: ${{ secrets.AMAZON_CREDENTIAL_VERSION || '3.1' }}
+          AFFILIATE_LINKS: ${{ secrets.AFFILIATE_LINKS }}
           SEARCH_TERMS: ${{ secrets.SEARCH_TERMS }}
           MAX_OFERTAS: ${{ secrets.MAX_OFERTAS }}
         run: python src/builder.py

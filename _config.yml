@@ -43,6 +43,13 @@ exclude:
   - Gemfile.lock
 
 # Parâmetros do gerador automático (lidos pelo builder.py)
+# Cole aqui os links que você criar no Associates (amzn.to ou /dp/ASIN).
+# Se esta lista não estiver vazia, o gerador usa estes produtos em vez da busca por termo.
+links_afiliado:
+  - https://amzn.to/4qoOHSN
+  - https://amzn.to/4xiBzBl
+  - https://amzn.to/4x2LESM
+  - https://amzn.to/4qzhrZ9
 termos_busca:
   - air fryer
   - fone bluetooth
