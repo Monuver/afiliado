@@ -32,6 +32,7 @@ exclude:
   - src/
   - requirements.txt
   - README.md
+  - AGENTS.md
   - .github/
   - .env
   - .env.example
