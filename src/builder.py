@@ -19,7 +19,7 @@ ROOT_DIR = SRC_DIR.parent
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from scraper import AmazonScraper  # noqa: E402
+from scraper import AmazonScraper, CatalogoNaoConfigurado  # noqa: E402
 from seo_writer import aplicar_tag_afiliado, gerar_post_markdown  # noqa: E402
 
 TIMEZONE = ZoneInfo("America/Sao_Paulo")
@@ -48,16 +48,28 @@ def main() -> int:
         logger.error("Nenhum termo de busca configurado. Abortando.")
         return 1
 
-    scraper = AmazonScraper()
+    try:
+        scraper = AmazonScraper()
+    except Exception as exc:
+        logger.error("Não foi possível iniciar o catálogo: %s", exc)
+        return 1
+
     gerados = 0
     erros = 0
 
     for termo in termos:
         try:
             ofertas = scraper.buscar_ofertas(termo, limite=limite)
+        except CatalogoNaoConfigurado as exc:
+            logger.error("%s", exc)
+            return 1
         except Exception as exc:
             erros += 1
             logger.error("Falha ao buscar ofertas para '%s': %s", termo, exc)
+            continue
+
+        if not ofertas:
+            logger.warning("Nenhuma oferta real devolvida para '%s'.", termo)
             continue
 
         for produto in ofertas:
