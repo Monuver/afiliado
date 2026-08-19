@@ -31,7 +31,7 @@ Rode o gerador:
 python src/builder.py
 ```
 
-Os arquivos entram em `_posts/`. Sem a chave Gemini, o writer usa um template de fallback para o pipeline não parar.
+Os arquivos entram em `_posts/`. O modelo padrão é `gemini-3.6-flash` (o `gemini-2.0-flash` foi descontinuado). Sem a chave Gemini, o writer usa um template de fallback para o pipeline não parar. Posts do mesmo produto são atualizados no mesmo arquivo, sem criar URL duplicada.
 
 ## GitHub Actions e Pages
 

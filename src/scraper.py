@@ -47,7 +47,6 @@ class AmazonScraper:
                 "Accept-Language": "pt-BR,pt;q=0.9",
             }
         )
-        self._conectividade_ok: bool | None = None
 
     def buscar_ofertas(self, termo: str, limite: int = 5) -> list[dict[str, str]]:
         """Recebe um termo de busca e devolve ofertas no formato esperado pelo builder.
@@ -60,8 +59,6 @@ class AmazonScraper:
             return []
 
         limite = max(1, min(int(limite), len(_VARIANTES)))
-        self._verificar_conectividade()
-
         html = self._html_catalogo_simulado(termo, limite)
         ofertas = self._extrair_ofertas_do_html(html)
 
@@ -73,36 +70,6 @@ class AmazonScraper:
 
         logger.info("Encontradas %s oferta(s) para '%s'.", len(ofertas), termo)
         return ofertas
-
-    def _verificar_conectividade(self) -> bool:
-        """Tenta um HEAD leve na Amazon. Falhas de rede não interrompem a geração."""
-        if self._conectividade_ok is not None:
-            return self._conectividade_ok
-
-        try:
-            resposta = self.session.head(
-                AMAZON_BASE,
-                timeout=self.timeout,
-                allow_redirects=True,
-            )
-            resposta.raise_for_status()
-            logger.debug("Conectividade OK (status %s).", resposta.status_code)
-            self._conectividade_ok = True
-            return True
-        except requests.Timeout:
-            logger.warning(
-                "Timeout ao contactar %s após %ss. Seguindo com catálogo simulado.",
-                AMAZON_BASE,
-                self.timeout,
-            )
-        except requests.ConnectionError as exc:
-            logger.warning("Erro de conexão com a Amazon: %s. Catálogo simulado ativo.", exc)
-        except requests.HTTPError as exc:
-            logger.warning("HTTP inesperado da Amazon: %s. Catálogo simulado ativo.", exc)
-        except requests.RequestException as exc:
-            logger.warning("Falha de rede (%s). Catálogo simulado ativo.", exc)
-        self._conectividade_ok = False
-        return False
 
     def _html_catalogo_simulado(self, termo: str, limite: int) -> str:
         """Monta um HTML fictício de vitrine para ser parseado pelo BeautifulSoup."""
