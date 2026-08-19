@@ -29,6 +29,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || 'gemini-3.6-flash' }}
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
+          AMAZON_CREDENTIAL_ID: ${{ secrets.AMAZON_CREDENTIAL_ID }}
+          AMAZON_CREDENTIAL_SECRET: ${{ secrets.AMAZON_CREDENTIAL_SECRET }}
+          AMAZON_CREDENTIAL_VERSION: ${{ secrets.AMAZON_CREDENTIAL_VERSION || '3.1' }}
           SEARCH_TERMS: ${{ secrets.SEARCH_TERMS }}
           MAX_OFERTAS: ${{ secrets.MAX_OFERTAS }}
         run: python src/builder.py

@@ -127,6 +127,12 @@ def _montar_prompt(produto: dict[str, Any]) -> str:
     preco = produto.get("preco", "preço sob consulta")
     link = produto.get("link_afiliado") or produto.get("link_original", "#")
     imagem = produto.get("imagem", "")
+    caracteristicas = str(produto.get("caracteristicas") or "").strip()
+    bloco_features = (
+        f"Características oficiais (use só estas; não invente spec): {caracteristicas}"
+        if caracteristicas
+        else "Características oficiais: não informadas. Não invente especificações técnicas."
+    )
 
     return f"""Você é um copywriter sênior de SEO para um site brasileiro de ofertas de afiliados.
 
@@ -136,6 +142,7 @@ Produto: {nome}
 Preço anunciado: {preco}
 Link de afiliado (use exatamente este URL no CTA): {link}
 Imagem: {imagem}
+{bloco_features}
 
 Regras obrigatórias:
 - Comece com um único H1 chamativo, incluindo a palavra-chave principal de forma natural.
@@ -143,7 +150,7 @@ Regras obrigatórias:
 - Inclua a imagem com a sintaxe Markdown: ![{nome}]({imagem})
 - Use H2/H3 para benefícios, para quem é indicado e um mini FAQ (3 perguntas) visando featured snippet.
 - Linguagem em português do Brasil, tom direto, sem clichês de "melhor do mundo".
-- Não invente especificações técnicas que não estejam no nome do produto.
+- Não invente especificações técnicas. Só cite o que estiver no nome ou nas características oficiais.
 - Feche com um H2 de call-to-action e UM único link Markdown, exatamente assim:
   [Confira o preço atualizado na Amazon]({link})
 - Não inclua a palavra "afiliado" no texto visível; o CTA deve ser claro e honesto ("ver preço", "comprar").
